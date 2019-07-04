@@ -5,6 +5,12 @@ import torch.nn.functional as F
 import torch.optim as optim
 import random
 
+# True for 1 hidden neural network, False to test 2 hidden layer neural network
+one_hidden = True; 
+EPOCHS_TO_TRAIN = 1000
+input_len = 32
+
+
 # The following three functions below generates the data for a nexted xor function described by Andrew NG in the following youtube video: 
 # https://youtu.be/5dWp1mw_XNk?list=PLkDaE6sCZn6Ec-XTbcX1uRg2_u4xOEky0&t=381
 
@@ -41,15 +47,8 @@ for i in range(100): # generate 100 samples
     Xdata[i].append(round(random.random()))
   Ydata.append(nested_xor(Xdata[i]))
         
-net = Net()
 inputs = list(map(lambda s: Variable(torch.Tensor([s])), Xdata))
 targets = list(map(lambda s: Variable(torch.Tensor([s])), Ydata))
-
-
-# True for 1 hidden neural network, False to test 2 hidden layer neural network
-one_hidden = True; 
-EPOCHS_TO_TRAIN = 1000
-input_len = 32
 
 class Net(nn.Module):   
 
@@ -61,7 +60,7 @@ class Net(nn.Module):
         
         if(one_hidden == True):
           
-          hidden1 = 12
+          hidden1 = 6
 
           self.fc1 = nn.Linear(_input, hidden1, True)
           self.fc2 = nn.Linear(hidden1, _output, True)          
@@ -69,7 +68,7 @@ class Net(nn.Module):
           
         else:
 
-          hidden1 = 8
+          hidden1 = 6
           hidden2 = 3
 
           self.fc1 = nn.Linear(_input, hidden1, True)
@@ -87,7 +86,7 @@ class Net(nn.Module):
           x = self.fc2(x)
         return x
 
-
+net = Net()
 criterion = nn.MSELoss()
 optimizer = optim.SGD(net.parameters(), lr=0.1)
 
@@ -111,4 +110,3 @@ for input, target in zip(inputs, targets):
         round(float(output.data.numpy()[0]), 4),
         round(float(abs(target.data.numpy()[0] - output.data.numpy()[0])), 4)
 ))
-
