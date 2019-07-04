@@ -1,9 +1,12 @@
 import torch
 from torch.autograd import Variable
 import torch.nn as nn
-#import torch.nn.functional as F
+import torch.nn.functional as F
 import torch.optim as optim
 import random
+
+# The following three functions below generates the data for a nexted xor function described by Andrew NG in the following youtube video: 
+# https://youtu.be/5dWp1mw_XNk?list=PLkDaE6sCZn6Ec-XTbcX1uRg2_u4xOEky0&t=381
 
 def gen_xor(x1, x2):
   if(x1==0 and x2==1):
@@ -12,37 +15,53 @@ def gen_xor(x1, x2):
     return 1
   else:
     return 0
-  
+
+def loop_xor(xs):
+  ys = []  
+  i = 0;
+  while(i < len(xs)-1):
+      ys.append(gen_xor(xs[i], xs[i+1]))
+      i = i+2 
+  return ys
+
 def nested_xor(xs):
-  ys = []
-  
-  ys.append(gen_xor(xs[0], xs[1]))
-  ys.append(gen_xor(xs[2], xs[3]))
-  ys.append(gen_xor(xs[4], xs[5]))
-  ys.append(gen_xor(xs[6], xs[7]))
-  
-  out1 = gen_xor(ys[0], ys[1])
-  out2 = gen_xor(ys[2], ys[3])
-  
-  out = gen_xor(out1, out2)
-  
+  xs2 = loop_xor(xs)
+  xs3 = loop_xor(xs2)
+  xs4 = loop_xor(xs3)
+  xs5 = loop_xor(xs4)
+  out = gen_xor(xs5[0],xs5[1])
   return out
 
-EPOCHS_TO_TRAIN = 5000
+# generate the X and Y data
+Xdata=[]
+Ydata=[]
+for i in range(100): # generate 100 samples
+  Xdata.append([])
+  for j in range(input_len):
+    Xdata[i].append(round(random.random()))
+  Ydata.append(nested_xor(Xdata[i]))
+        
+net = Net()
+inputs = list(map(lambda s: Variable(torch.Tensor([s])), Xdata))
+targets = list(map(lambda s: Variable(torch.Tensor([s])), Ydata))
 
-one_hidden = False;
+
+# True for 1 hidden neural network, False to test 2 hidden layer neural network
+one_hidden = True; 
+EPOCHS_TO_TRAIN = 1000
+input_len = 32
 
 class Net(nn.Module):   
 
     def __init__(self):
         super(Net, self).__init__()
         
-        _input = 2 
+        _input = input_len 
         _output = 1 
         
         if(one_hidden == True):
           
-          hidden1 = 2
+          hidden1 = 12
 
           self.fc1 = nn.Linear(_input, hidden1, True)
           self.fc2 = nn.Linear(hidden1, _output, True)          
@@ -50,7 +69,7 @@ class Net(nn.Module):
           
         else:
 
-          hidden1 = 2
+          hidden1 = 8
           hidden2 = 3
 
           self.fc1 = nn.Linear(_input, hidden1, True)
@@ -68,32 +87,6 @@ class Net(nn.Module):
           x = self.fc2(x)
         return x
 
-# Xdata = [
-#     [0, 0],
-#     [0, 1],
-#     [1, 0],
-#     [1, 1]
-# ]
-
-# Ydata = [
-#     [0],
-#     [1],
-#     [1],
-#     [0]
-# ]
-
-Xdata=[]
-Ydata=[]
-for i in range(1000):
-  Xdata.append([])
-  for j in range(8):
-    Xdata[i].append(round(random.random())
-  Ydata.append(nested_xor(Xdata[i]))
-        
-net = Net()
-inputs = list(map(lambda s: Variable(torch.Tensor([s])), Xdata))
-targets = list(map(lambda s: Variable(torch.Tensor([s])), Ydata))
-
 
 criterion = nn.MSELoss()
 optimizer = optim.SGD(net.parameters(), lr=0.1)
@@ -106,19 +99,16 @@ for idx in range(0, EPOCHS_TO_TRAIN):
         loss = criterion(output, target)
         loss.backward()
         optimizer.step()    # Does the update
-    if idx % 1000 == 0:
+    if idx % 200 == 0:
         print("Epoch {: >8} Loss: {}".format(idx, loss.data.numpy()))
 
 print("")
 print("Final results:")
 for input, target in zip(inputs, targets):
     output = net(input)
-    print("Input:[{},{}] Target:[{}] Predicted:[{}] Error:[{}]".format(
-        int(input.data.numpy()[0][0]),
-        int(input.data.numpy()[0][1]),
+    print("Target:[{}] Predicted:[{}] Error:[{}]".format(
         int(target.data.numpy()[0]),
         round(float(output.data.numpy()[0]), 4),
         round(float(abs(target.data.numpy()[0] - output.data.numpy()[0])), 4)
 ))
-
 
